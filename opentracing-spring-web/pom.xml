@@ -79,4 +79,15 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+      <distributionManagement>
+        <repository>
+            <id>faceit-nexus-private-releases-repository</id>
+            <url>https://nexus.faceit-infra.com/repository/maven-releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>faceit-nexus-private-snapshots-repository</id>
+            <url>https://nexus.faceit-infra.com/repository/maven-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

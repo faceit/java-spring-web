@@ -13,15 +13,17 @@
  */
 package io.opentracing.contrib.spring.web.interceptor;
 
-import io.opentracing.Span;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.method.HandlerMethod;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.method.HandlerMethod;
+
+import io.opentracing.Span;
 
 /**
  * SpanDecorator to decorate span at different stages in filter processing.
@@ -34,9 +36,12 @@ public interface HandlerInterceptorSpanDecorator {
      * This is called in
      * {@link org.springframework.web.servlet.HandlerInterceptor#preHandle(HttpServletRequest, HttpServletResponse, Object)}.
      *
-     * @param httpServletRequest request
-     * @param handler handler
-     * @param span current span
+     * @param httpServletRequest
+     *            request
+     * @param handler
+     *            handler
+     * @param span
+     *            current span
      */
     void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span);
 
@@ -44,29 +49,39 @@ public interface HandlerInterceptorSpanDecorator {
      * This is called in
      * {@link org.springframework.web.servlet.HandlerInterceptor#afterCompletion(HttpServletRequest, HttpServletResponse, Object, Exception)}
      *
-     * @param httpServletRequest request
-     * @param httpServletResponse response
-     * @param handler handler
-     * @param ex exception
-     * @param span current span
+     * @param httpServletRequest
+     *            request
+     * @param httpServletResponse
+     *            response
+     * @param handler
+     *            handler
+     * @param ex
+     *            exception
+     * @param span
+     *            current span
      */
-    void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object handler,
-                           Exception ex, Span span);
+    void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+            Object handler, Exception ex, Span span);
 
     /**
      * This is called in
      * {@link org.springframework.web.servlet.AsyncHandlerInterceptor#afterConcurrentHandlingStarted(HttpServletRequest, HttpServletResponse, Object)}
      *
-     * @param httpServletRequest request
-     * @param httpServletResponse response
-     * @param handler handler
-     * @param span current span
+     * @param httpServletRequest
+     *            request
+     * @param httpServletResponse
+     *            response
+     * @param handler
+     *            handler
+     * @param span
+     *            current span
      */
-    void onAfterConcurrentHandlingStarted(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object handler,
-                           Span span);
+    void onAfterConcurrentHandlingStarted(HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse, Object handler, Span span);
 
     /**
-     * Decorator to record details about the handler as log events recorded on the span.
+     * Decorator to record details about the handler as log events recorded on
+     * the span.
      */
     HandlerInterceptorSpanDecorator STANDARD_LOGS = new HandlerInterceptorSpanDecorator() {
 
@@ -91,7 +106,7 @@ public interface HandlerInterceptorSpanDecorator {
 
         @Override
         public void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-                                      Object handler, Exception ex, Span span) {
+                Object handler, Exception ex, Span span) {
             Map<String, Object> logs = new HashMap<>(2);
             logs.put("event", "afterCompletion");
             logs.put(HandlerUtils.HANDLER, handler);
@@ -115,7 +130,7 @@ public interface HandlerInterceptorSpanDecorator {
 
         @Override
         public void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span) {
-            String metaData = HandlerUtils.methodName(handler);
+            String metaData = HandlerUtils.getOperationNameFromClassAndMethod(handler);
             if (metaData != null) {
                 span.setOperationName(metaData);
             }
@@ -123,7 +138,7 @@ public interface HandlerInterceptorSpanDecorator {
 
         @Override
         public void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
-                                      Object handler, Exception ex, Span span) {
+                Object handler, Exception ex, Span span) {
         }
 
         @Override
@@ -135,27 +150,29 @@ public interface HandlerInterceptorSpanDecorator {
     /**
      * Use the Spring RequestMapping's value as the span's operation name.
      */
-    HandlerInterceptorSpanDecorator HANDLER_SPRING_WEB_METHOD_OPERATION_NAME = new HandlerInterceptorSpanDecorator() {
+    HandlerInterceptorSpanDecorator HANDLER_REQUEST_MAPPING_OPERATION_NAME = new HandlerInterceptorSpanDecorator() {
         @Override
         public void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span) {
-            String webOperationName = HandlerUtils.getOperationName(handler);
+            String webOperationName = HandlerUtils.getOperationNameFromAnnotation(handler);
             if (webOperationName != null) {
                 span.setOperationName(webOperationName);
                 return;
             }
 
-            String metaData = HandlerInterceptorSpanDecorator.HandlerUtils.methodName(handler);
+            String metaData = HandlerInterceptorSpanDecorator.HandlerUtils.getOperationNameFromClassAndMethod(handler);
             if (metaData != null) {
                 span.setOperationName(metaData);
             }
         }
 
         @Override
-        public void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object handler, Exception ex, Span span) {
+        public void onAfterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse,
+                Object handler, Exception ex, Span span) {
         }
 
         @Override
-        public void onAfterConcurrentHandlingStarted(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object handler, Span span) {
+        public void onAfterConcurrentHandlingStarted(HttpServletRequest httpServletRequest,
+                HttpServletResponse httpServletResponse, Object handler, Span span) {
         }
     };
 
@@ -163,7 +180,8 @@ public interface HandlerInterceptorSpanDecorator {
      * Helper class for deriving tags/logs from handler object.
      */
     class HandlerUtils {
-        private HandlerUtils() {}
+        private HandlerUtils() {
+        }
 
         /**
          * Class name of a handler serving request
@@ -179,14 +197,12 @@ public interface HandlerInterceptorSpanDecorator {
         public static final String HANDLER = "handler";
 
         public static String className(Object handler) {
-            return handler instanceof HandlerMethod ?
-                    ((HandlerMethod) handler).getBeanType().getSimpleName() :
-                    handler.getClass().getSimpleName() ;
+            return handler instanceof HandlerMethod ? ((HandlerMethod) handler).getBeanType().getSimpleName()
+                    : handler.getClass().getSimpleName();
         }
 
         public static String methodName(Object handler) {
-            return handler instanceof HandlerMethod ?
-                    ((HandlerMethod) handler).getMethod().getName() : null;
+            return handler instanceof HandlerMethod ? ((HandlerMethod) handler).getMethod().getName() : null;
         }
 
         public static String requestMapping(Object handler) {
@@ -195,26 +211,44 @@ public interface HandlerInterceptorSpanDecorator {
         }
 
         public static String methodRequestMapping(Object handler) {
-            String[] mappings = (((HandlerMethod) handler).getMethodAnnotation(RequestMapping.class)).value();
+            String[] mappings = null;
+
+            RequestMapping annotation = ((HandlerMethod) handler).getMethodAnnotation(RequestMapping.class);
+            if (annotation != null) {
+                mappings = annotation.value();
+            }
+
             return mappings != null && mappings.length > 0 ? mappings[0] : null;
         }
 
         public static String clazzRequestMapping(Object handler) {
-            String[] mappings = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class).value();
+            String[] mappings = null;
+
+            RequestMapping annotation = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class);
+            if (annotation != null) {
+                mappings = annotation.value();
+            }
+
             return mappings != null && mappings.length > 0 ? mappings[0] : null;
         }
 
-        public static String getOperationName(Object handler){
-            StringBuffer operationName = null;
+        public static String getOperationNameFromClassAndMethod(Object handler) {
+            return new StringBuffer(className(handler)).append("#").append(methodName(handler)).toString();
+        }
+
+        public static String getOperationNameFromAnnotation(Object handler) {
+            StringBuffer operationName = new StringBuffer();
+
+            String clazzRequestMapping = clazzRequestMapping(handler);
+            if (clazzRequestMapping != null) {
+                operationName.append(clazzRequestMapping);
+            }
             String methodRequestMapping = methodRequestMapping(handler);
             if (methodRequestMapping != null) {
-                operationName = new StringBuffer(methodRequestMapping);
-                String clazzRequestMapping = clazzRequestMapping(handler);
-                if (clazzRequestMapping != null) {
-                    operationName.insert(0, clazzRequestMapping);
-                }
+                operationName.append(methodRequestMapping);
             }
-            return operationName==null?null:operationName.toString();
+
+            return operationName == null ? null : operationName.toString();
         }
     }
 }

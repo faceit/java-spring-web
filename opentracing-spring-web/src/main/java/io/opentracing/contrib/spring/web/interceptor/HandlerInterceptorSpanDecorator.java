@@ -87,6 +87,10 @@ public interface HandlerInterceptorSpanDecorator {
 
         @Override
         public void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span) {
+            if (!(handler instanceof HandlerMethod)) {
+                return;
+            }
+
             Map<String, Object> logs = new HashMap<>(3);
             logs.put("event", "preHandle");
             logs.put(HandlerUtils.HANDLER, handler);
@@ -130,6 +134,10 @@ public interface HandlerInterceptorSpanDecorator {
 
         @Override
         public void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span) {
+            if (!(handler instanceof HandlerMethod)) {
+                return;
+            }
+
             String metaData = HandlerUtils.getOperationNameFromClassAndMethod(handler);
             if (metaData != null) {
                 span.setOperationName(metaData);
@@ -151,8 +159,13 @@ public interface HandlerInterceptorSpanDecorator {
      * Use the Spring RequestMapping's value as the span's operation name.
      */
     HandlerInterceptorSpanDecorator HANDLER_REQUEST_MAPPING_OPERATION_NAME = new HandlerInterceptorSpanDecorator() {
+
         @Override
         public void onPreHandle(HttpServletRequest httpServletRequest, Object handler, Span span) {
+            if (!(handler instanceof HandlerMethod)) {
+                return;
+            }
+
             String webOperationName = HandlerUtils.getOperationNameFromAnnotation(handler);
             if (webOperationName != null) {
                 span.setOperationName(webOperationName);
@@ -224,9 +237,9 @@ public interface HandlerInterceptorSpanDecorator {
         public static String clazzRequestMapping(Object handler) {
             String[] mappings = null;
 
-            RequestMapping annotation = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class);
-            if (annotation != null) {
-                mappings = annotation.value();
+                RequestMapping annotation = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class);
+                if (annotation != null) {
+                    mappings = annotation.value();
             }
 
             return mappings != null && mappings.length > 0 ? mappings[0] : null;
@@ -251,4 +264,5 @@ public interface HandlerInterceptorSpanDecorator {
             return operationName == null ? null : operationName.toString();
         }
     }
+
 }

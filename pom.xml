@@ -19,7 +19,7 @@
 
   <groupId>io.opentracing.contrib</groupId>
   <artifactId>opentracing-spring-web-parent</artifactId>
-  <version>4.1.0</version>
+  <version>4.1.0-faceit</version>
   <packaging>pom</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>

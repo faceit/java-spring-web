@@ -234,16 +234,16 @@ public interface HandlerInterceptorSpanDecorator {
             return mappings != null && mappings.length > 0 ? mappings[0] : null;
         }
 
-        public static String clazzRequestMapping(Object handler) {
-            String[] mappings = null;
+	    public static String clazzRequestMapping(Object handler) {
+		    String[] mappings = null;
 
-                RequestMapping annotation = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class);
-                if (annotation != null) {
-                    mappings = annotation.value();
-            }
+		    RequestMapping annotation = ((HandlerMethod) handler).getBeanType().getAnnotation(RequestMapping.class);
+		    if (annotation != null) {
+			    mappings = annotation.value();
+		    }
 
-            return mappings != null && mappings.length > 0 ? mappings[0] : null;
-        }
+		    return mappings != null && mappings.length > 0 ? mappings[0] : null;
+	    }
 
         public static String getOperationNameFromClassAndMethod(Object handler) {
             return new StringBuffer(className(handler)).append("#").append(methodName(handler)).toString();

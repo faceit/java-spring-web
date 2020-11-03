@@ -16,7 +16,6 @@ package io.opentracing.contrib.spring.web.interceptor.itest.mvc;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.awaitility.Awaitility;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -28,7 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-
 import io.opentracing.contrib.spring.web.interceptor.itest.common.AbstractBaseITests;
 import io.opentracing.contrib.spring.web.interceptor.itest.common.app.ExceptionFilter;
 import io.opentracing.contrib.spring.web.interceptor.itest.common.app.TestController;
@@ -40,6 +38,7 @@ import io.opentracing.tag.Tags;
  * @author Pavol Loffay
  */
 public class MVCJettyITest extends AbstractBaseITests {
+
     protected static final String CONTEXT_PATH = "/tracing";
 
     static Server jettyServer;
@@ -59,10 +58,9 @@ public class MVCJettyITest extends AbstractBaseITests {
 
         jettyServer.setHandler(webApp);
         jettyServer.start();
-        serverPort = ((ServerConnector)jettyServer.getConnectors()[0]).getLocalPort();
+        serverPort = ((ServerConnector) jettyServer.getConnectors()[0]).getLocalPort();
 
-        testRestTemplate = new TestRestTemplate(new RestTemplateBuilder()
-                .rootUri("http://localhost:" + serverPort + CONTEXT_PATH));
+        testRestTemplate = new TestRestTemplate(new RestTemplateBuilder().rootUri("http://localhost:" + serverPort + CONTEXT_PATH));
     }
 
     @AfterClass
@@ -81,6 +79,7 @@ public class MVCJettyITest extends AbstractBaseITests {
         return testRestTemplate;
     }
 
+    @Override
     @Test
     public void testFilterException() throws Exception {
         {
@@ -97,22 +96,21 @@ public class MVCJettyITest extends AbstractBaseITests {
         Assert.assertEquals(6, span.tags().size());
         Assert.assertEquals(Tags.SPAN_KIND_SERVER, span.tags().get(Tags.SPAN_KIND.getKey()));
         Assert.assertEquals("GET", span.tags().get(Tags.HTTP_METHOD.getKey()));
-        Assert.assertEquals(getUrl(ExceptionFilter.EXCEPTION_URL),
-                span.tags().get(Tags.HTTP_URL.getKey()));
+        Assert.assertEquals(getUrl(ExceptionFilter.EXCEPTION_URL), span.tags().get(Tags.HTTP_URL.getKey()));
         Assert.assertEquals(500, span.tags().get(Tags.HTTP_STATUS.getKey()));
         Assert.assertNotNull(span.tags().get(Tags.COMPONENT.getKey()));
         Assert.assertEquals(Boolean.TRUE, span.tags().get(Tags.ERROR.getKey()));
 
-//        request is not hitting controller
+        // request is not hitting controller
         assertLogEvents(span.logEntries(), Arrays.asList("error"));
-//        error logs
+        // error logs
         Assert.assertEquals(3, span.logEntries().get(0).fields().size());
         Assert.assertEquals(Tags.ERROR.getKey(), span.logEntries().get(0).fields().get("event"));
         Assert.assertNotNull(span.logEntries().get(0).fields().get("stack"));
-        Assert.assertEquals(ExceptionFilter.EXCEPTION_MESSAGE,
-                span.logEntries().get(0).fields().get("message"));
+        Assert.assertEquals(ExceptionFilter.EXCEPTION_MESSAGE, span.logEntries().get(0).fields().get("message"));
     }
 
+    @Override
     @Test
     public void testSecuredURLUnAuthorized() throws Exception {
         {
@@ -132,11 +130,12 @@ public class MVCJettyITest extends AbstractBaseITests {
         Assert.assertEquals(401, span.tags().get(Tags.HTTP_STATUS.getKey()));
         Assert.assertNotNull(span.tags().get(Tags.COMPONENT.getKey()));
 
-//        request does not hit any controller
+        // request does not hit any controller
         assertLogEvents(span.logEntries(), Collections.<String>emptyList());
     }
 
 
+    @Override
     @Test
     public void testNoURLMapping() {
         {
@@ -154,6 +153,7 @@ public class MVCJettyITest extends AbstractBaseITests {
         assertLogEvents(span.logEntries(), Collections.<String>emptyList());
     }
 
+    @Override
     @Test
     public void testControllerMappedException() throws Exception {
         {
@@ -165,7 +165,7 @@ public class MVCJettyITest extends AbstractBaseITests {
         assertOnErrors(mockSpans);
 
         MockSpan span = mockSpans.get(0);
-        Assert.assertEquals("mappedException", span.operationName());
+        Assert.assertEquals("TestController#mappedException", span.operationName());
 
         Assert.assertEquals(5, span.tags().size());
         Assert.assertEquals(Tags.SPAN_KIND_SERVER, span.tags().get(Tags.SPAN_KIND.getKey()));
@@ -177,6 +177,7 @@ public class MVCJettyITest extends AbstractBaseITests {
         assertLogEvents(span.logEntries(), Arrays.asList("preHandle", "afterCompletion"));
     }
 
+    @Override
     @Test
     public void testControllerException() throws Exception {
         {
@@ -189,7 +190,7 @@ public class MVCJettyITest extends AbstractBaseITests {
 
         MockSpan span = mockSpans.get(0);
 
-        Assert.assertEquals("exception", span.operationName());
+        Assert.assertEquals("TestController#exception", span.operationName());
         Assert.assertEquals(6, span.tags().size());
         Assert.assertEquals(Tags.SPAN_KIND_SERVER, span.tags().get(Tags.SPAN_KIND.getKey()));
         Assert.assertEquals("GET", span.tags().get(Tags.HTTP_METHOD.getKey()));
@@ -199,14 +200,14 @@ public class MVCJettyITest extends AbstractBaseITests {
         Assert.assertEquals(Boolean.TRUE, span.tags().get(Tags.ERROR.getKey()));
 
         assertLogEvents(span.logEntries(), Arrays.asList("preHandle", "afterCompletion", "error"));
-//        error log
+        // error log
         Assert.assertEquals(3, span.logEntries().get(2).fields().size());
         Assert.assertEquals(Tags.ERROR.getKey(), span.logEntries().get(2).fields().get("event"));
-        Assert.assertEquals(TestController.EXCEPTION_MESSAGE,
-                span.logEntries().get(2).fields().get("message"));
+        Assert.assertEquals(TestController.EXCEPTION_MESSAGE, span.logEntries().get(2).fields().get("message"));
         Assert.assertNotNull(span.logEntries().get(2).fields().get("stack"));
     }
 
+    @Override
     @Test
     public void testControllerAsyncException() {
         {
@@ -218,7 +219,7 @@ public class MVCJettyITest extends AbstractBaseITests {
         assertOnErrors(mockSpans);
 
         MockSpan span = mockSpans.get(0);
-        Assert.assertEquals("asyncException", span.operationName());
+        Assert.assertEquals("TestController#asyncException", span.operationName());
         Assert.assertEquals(5, span.tags().size());
         Assert.assertEquals(Tags.SPAN_KIND_SERVER, span.tags().get(Tags.SPAN_KIND.getKey()));
         Assert.assertEquals("GET", span.tags().get(Tags.HTTP_METHOD.getKey()));
@@ -226,10 +227,10 @@ public class MVCJettyITest extends AbstractBaseITests {
         Assert.assertEquals(500, span.tags().get(Tags.HTTP_STATUS.getKey()));
         Assert.assertNotNull(span.tags().get(Tags.COMPONENT.getKey()));
         // TODO error is not being logged because AsyncListener is not invoked at all
-//        Assert.assertEquals(Boolean.TRUE, span.tags().get(Tags.ERROR.getKey()));
+        // Assert.assertEquals(Boolean.TRUE, span.tags().get(Tags.ERROR.getKey()));
 
-        assertLogEvents(span.logEntries(), Arrays.asList("preHandle", "afterConcurrentHandlingStarted",
-                "preHandle", "afterCompletion"));
+        assertLogEvents(span.logEntries(), Arrays.asList("preHandle", "afterConcurrentHandlingStarted", "preHandle", "afterCompletion"));
 
     }
+
 }

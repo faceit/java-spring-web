@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 the original author or authors. Copyright 2019 The OpenTracing Authors.
+ * Copyright 2013-2020 the original author or authors. Copyright 2019 The OpenTracing Authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
      *
      * @return whether request should be traced or not
      */
-    boolean shouldBeTraced(final ServerHttpRequest request) {
+    protected boolean shouldBeTraced(final ServerHttpRequest request) {
         final PathContainer pathWithinApplication = request.getPath().pathWithinApplication();
         // skip URLs matching skip pattern
         // e.g. pattern is defined as '/health|/status' then URL 'http://localhost:5000/context/health' won't be traced
